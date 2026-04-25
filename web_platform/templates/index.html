@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Echo Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div class="brand-lockup">
+          <div class="brand-mark" aria-hidden="true">EH</div>
+          <div>
+            <p class="kicker">Echo Home</p>
+            <h1>Home Lighting</h1>
+          </div>
+        </div>
+
+        <div class="header-status">
+          <div class="connection" id="connectionBadge">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span id="connectionText">Connecting</span>
+          </div>
+          <button class="icon-button" id="refreshButton" type="button" title="Refresh" aria-label="Refresh status">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M20 12a8 8 0 0 1-13.66 5.66M4 12A8 8 0 0 1 17.66 6.34M18 3v4h-4M6 21v-4h4"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <section class="control-bar" aria-label="Lighting controls">
+        <button class="command primary" id="allOnButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v10"></path>
+            <path d="M18.36 5.64a9 9 0 1 1-12.72 0"></path>
+          </svg>
+          <span>All On</span>
+        </button>
+        <button class="command" id="allOffButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2v10"></path>
+            <path d="M18.36 5.64a9 9 0 1 1-12.72 0"></path>
+          </svg>
+          <span>All Off</span>
+        </button>
+        <button class="command" id="bluetoothConnectButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m7 7 10 10-5 5V2l5 5L7 17"></path>
+          </svg>
+          <span>Bluetooth</span>
+        </button>
+        <button class="command" id="usageGraphsButton" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 3v18h18"></path>
+            <path d="M7 15l4-4 3 3 5-7"></path>
+          </svg>
+          <span>Graphs</span>
+        </button>
+        <span class="state-pill bluetooth-pill" id="bluetoothStatusText">Bluetooth idle</span>
+        <label class="pin-field" id="pinField">
+          <span>PIN</span>
+          <input id="pinInput" type="password" inputmode="numeric" autocomplete="off">
+        </label>
+      </section>
+
+      <section class="dashboard">
+        <section class="workspace-panel">
+          <div class="section-heading">
+            <div>
+              <h2>LED Zones</h2>
+              <p id="lastSeenText">Waiting for board status</p>
+            </div>
+            <span class="state-pill" id="statusText">Starting</span>
+          </div>
+          <div class="usage-panel" aria-label="Usage and bill estimates">
+            <div class="usage-card">
+              <span>Today</span>
+              <strong id="todayBillText">--</strong>
+              <small id="todayUsageText">--</small>
+            </div>
+            <div class="usage-card">
+              <span>This Week</span>
+              <strong id="weekBillText">--</strong>
+              <small id="weekUsageText">--</small>
+            </div>
+            <div class="usage-card">
+              <span>This Month</span>
+              <strong id="monthBillText">--</strong>
+              <small id="monthUsageText">--</small>
+            </div>
+            <div class="usage-card accent">
+              <span>Predicted Month</span>
+              <strong id="predictedMonthBillText">--</strong>
+              <small id="predictionBasisText">Current usage rate</small>
+            </div>
+          </div>
+          <div class="zone-usage-list" id="zoneUsageList"></div>
+          <div class="led-grid" id="ledGrid"></div>
+        </section>
+
+        <aside class="workspace-panel assistant-panel">
+          <div class="section-heading">
+            <div>
+              <h2>AI Assistant</h2>
+              <p>Home decisions</p>
+            </div>
+          </div>
+
+          <div class="assistant-messages" id="assistantMessages">
+            <div class="assistant-message assistant">
+              <span>Type or use Voice to control home lighting.</span>
+            </div>
+          </div>
+
+          <div class="quick-prompts" aria-label="Suggested commands">
+            <button type="button" data-prompt="Home closes at 6 PM">Close at 6 PM</button>
+            <button type="button" data-prompt="Turn on Living Room">Living Room on</button>
+            <button type="button" data-prompt="What lights are on?">Status</button>
+            <button type="button" data-prompt="What is this month's bill?">Month bill</button>
+            <button type="button" data-prompt="Predict this month's usage">Predict usage</button>
+          </div>
+
+          <form class="assistant-form" id="assistantForm">
+            <div class="voice-controls" aria-label="Voice assistant controls">
+              <button class="voice-button" id="voiceCommandButton" type="button" title="Voice command" aria-label="Start voice command">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                  <path d="M12 19v3"></path>
+                </svg>
+                <span id="voiceCommandLabel">Voice</span>
+              </button>
+              <button class="voice-button" id="voiceReplyButton" type="button" title="Spoken replies" aria-label="Toggle spoken replies">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11 5 6 9H2v6h4l5 4V5Z"></path>
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+                <span id="voiceReplyLabel">Speak Off</span>
+              </button>
+              <span class="voice-status" id="voiceStatusText">Voice idle</span>
+            </div>
+            <textarea id="assistantInput" rows="3" placeholder="Home closes at 6 PM"></textarea>
+            <button class="command primary stretch" type="submit">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M22 2 11 13"></path>
+                <path d="m22 2-7 20-4-9-9-4Z"></path>
+              </svg>
+              <span>Send</span>
+            </button>
+          </form>
+
+          <div class="automation-list" id="automationList"></div>
+        </aside>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <section class="graph-drawer" id="usageGraphDrawer" aria-label="Usage and cost graphs" aria-hidden="true">
+      <div class="graph-panel">
+        <div class="graph-header">
+          <div>
+            <p class="kicker">Usage Graphs</p>
+            <h2>Energy and Cost</h2>
+          </div>
+          <button class="icon-button" id="closeGraphsButton" type="button" title="Close graphs" aria-label="Close graphs">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18"></path>
+              <path d="m6 6 12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <div class="graph-tabs" role="tablist" aria-label="Graph type">
+          <button class="graph-tab active" type="button" data-graph-mode="usage">Usage</button>
+          <button class="graph-tab" type="button" data-graph-mode="cost">Cost</button>
+        </div>
+
+        <div class="graph-grid">
+          <article class="graph-card">
+            <div class="graph-card-heading">
+              <strong>Last 7 Days</strong>
+              <span id="weeklyGraphUnit">kWh</span>
+            </div>
+            <div class="bar-chart" id="weeklyUsageChart"></div>
+          </article>
+
+          <article class="graph-card">
+            <div class="graph-card-heading">
+              <strong>This Month</strong>
+              <span id="monthlyGraphUnit">kWh</span>
+            </div>
+            <div class="bar-chart compact" id="monthlyUsageChart"></div>
+          </article>
+        </div>
+
+        <article class="graph-card">
+          <div class="graph-card-heading">
+            <strong>Zone Breakdown</strong>
+            <span id="zoneGraphUnit">kWh</span>
+          </div>
+          <div class="zone-chart" id="zoneUsageChart"></div>
+        </article>
+      </div>
+    </section>
+
+    <script>
+      window.APP_CONFIG = {{ app_config | tojson }};
+    </script>
+    <script src="{{ url_for('static', filename='app.js') }}?v=voice-assistant-20260425"></script>
+  </body>
+</html>

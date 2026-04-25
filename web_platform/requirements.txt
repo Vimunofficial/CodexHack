@@ -1,0 +1,3 @@
+Flask>=3.0,<4
+paho-mqtt>=2.1,<3
+gunicorn>=22; platform_system != "Windows"
